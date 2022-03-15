@@ -81,6 +81,17 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .alwaysRemember(false)   // 기능을 활성화되지 않아도 항상 실행 (default:false)
                 .userDetailsService(userDetailsService);
 
+        // 동시 세션 제어
+        http
+                .sessionManagement()
+                .maximumSessions(2)     // 최대 세션 수
+                .maxSessionsPreventsLogin(true) // default : false(true: 니중에 로그인한 세션은 접근 불가능)
+        ;
+
+        // 세션 고정 보호
+        http
+                .sessionManagement()
+                .sessionFixation().changeSessionId(); // 기본값으로 로그인할 때 session id를 변경한다
 
     }
 }
