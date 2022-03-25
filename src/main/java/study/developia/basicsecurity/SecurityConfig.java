@@ -2,6 +2,7 @@ package study.developia.basicsecurity;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -9,10 +10,15 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.web.savedrequest.SavedRequest;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -39,6 +45,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
+                .antMatchers("/login").permitAll()
                 .antMatchers("/user").hasRole("USER")
                 .antMatchers("/admin/pay").hasRole("ADMIN") // 구체적인 경로를 먼저 와야 포함되지 않음
                 .antMatchers("/admin/**").access("hasRole('ADMIN') or hasRole('SYS')")
@@ -55,7 +62,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     @Override
                     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
                         System.out.println("authentication = " + authentication.getName());
-                        response.sendRedirect("/");
+                        // 사용자가 가려고 했던 정보를 저장하고 있음
+                        RequestCache requestCache = new HttpSessionRequestCache();
+                        SavedRequest savedRequest = requestCache.getRequest(request, response);
+                        String redirectUrl = savedRequest.getRedirectUrl();
+                        response.sendRedirect(redirectUrl);
                     }
                 })
                 .failureHandler(new AuthenticationFailureHandler() {    // 로그인 실패 후 핸들러
@@ -104,6 +115,25 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http
                 .sessionManagement()
                 .sessionFixation().changeSessionId(); // 기본값으로 로그인할 때 session id를 변경한다
+
+
+        http
+                .exceptionHandling()
+//                .authenticationEntryPoint(new AuthenticationEntryPoint() {
+//                    // 인증 예외가 발생했을 경우 예외
+//                    @Override
+//                    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+//                        // 커스텀 로그인 경로로 이동함
+//                        response.sendRedirect("/login");
+//                    }
+//                })
+                .accessDeniedHandler(new AccessDeniedHandler() {
+                    // 인가 예외 처리
+                    @Override
+                    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
+                        response.sendRedirect("/denied");
+                    }
+                });
 
     }
 }
