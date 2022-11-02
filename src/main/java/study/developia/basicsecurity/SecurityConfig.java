@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.access.AccessDeniedHandler;
@@ -137,10 +138,13 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                     }
                 });
 
+        // 메인스레드와 자식스레드 모두 SecurityContextHolder를 공유함
+//        SecurityContextHolder.setStrategyName(SecurityContextHolder.MODE_INHERITABLETHREADLOCAL);
+
     }
 }
 
-// WebSecurity class > FilterChainProxy 객체 등록ㄹ
+// WebSecurity class > FilterChainProxy 객체 등록
 @Configuration
 @Order(1) // 순서가 없으면 어떤 설정 클래스를 먼저 적용해야할지 몰라서 오류 발생
 class SecurityConfig2 extends WebSecurityConfigurerAdapter{
